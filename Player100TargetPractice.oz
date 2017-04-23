@@ -33,12 +33,14 @@ define
    SayAnswerSonar
    SayDeath
    SayDamageTaken
+
+   Directions
 in
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
    fun{InitState ID Color}
       state( id:id(id:ID color:Color name:'Target')
-	     %pos:pt(x:X y:Y)
+	    % pos:pt(x:X y:Y)
 	     hp:Input.maxDamage
 	     surf:true
 	     dead:false
@@ -62,7 +64,8 @@ in
 	 false
       end
    end
-   
+
+   Directions = [north east west south]
 
 %%%%%%%
 
@@ -85,12 +88,23 @@ in
       NewState
    end
 
-   fun{Move State ID Position Direction} NewState in
+   fun{Move State ID Position Direction} %NewState in
+      fun{NewPos} Pos in
+	 Direction = {Nth Directions OS.rand mod {Length Directions}}
+	 case Direction 
+	 of east then  Pos = {MapRandomPos}
+     % [] north then {UpdateState State [pos#pt(x-1 y)]}
+     % [] south then {UpdateState State [pos#pt(x+1 y)]}
+     % [] west then {UpdateState State [pos#pt(x y-1)]}
+	 end
+	 Pos
+      end
+   in
       ID = State.id
+      {AdjoinList State [pos#{NewPos}]}
       Position = State.pos
-      Direction = surface
-      NewState = {UpdateState State [surf#true]}
-      NewState
+     % NewState = {UpdateState State [surf#true]}
+     % NewState
    end
 
    fun{Dive State} NewState in
