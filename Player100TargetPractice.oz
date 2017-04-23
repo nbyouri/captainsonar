@@ -17,6 +17,7 @@ define
    InitPosition
    Move
    Dive
+   CanMove
    ChargeItem
    FireItem
    FireMine
@@ -88,20 +89,36 @@ in
       NewState
    end
 
+   fun{CanMove Pos}
+      if (Pos.x >= Input.nRow) then false
+      elseif (Pos.y >= Input.nColumn) then false
+      elseif (Pos.x < 0) then false
+      elseif (Pos.y < 0) then false
+      else {MapIsWater Pos}
+      end
+   end
+
    fun{Move State ID Position Direction} NewState
-      fun{NewPos}
-	 Direction = {Nth Directions (1 + ({OS.rand} mod ({Length Directions})))}
+      fun{NewPos} Pos NDirection in
+	 N = 1 + ({OS.rand} mod ({Length Directions}))
+	 NDirection = {Nth Directions N}
 	 case Direction of
-	 east then pt(x:(State.pos.x) y:(State.pos.y+1))
-	 [] north then pt(x:(State.pos.x-1) y:(State.pos.y))
-	 [] south then pt(x:(State.pos.x+1) y:(State.pos.y))
-	 [] west then pt(x:(State.pos.x) y:(State.pos.y-1))
+	 east then Pos = pt(x:(State.pos.x) y:(State.pos.y+1))
+	 [] north then Pos = pt(x:(State.pos.x-1) y:(State.pos.y))
+	 [] south then Pos = pt(x:(State.pos.x+1) y:(State.pos.y))
+	 [] west then Pos = pt(x:(State.pos.x) y:(State.pos.y-1))
 	 end
+	if {CanMove Pos} then
+	    Pos
+	else
+	    {NewPos}
+	end
       end
    in
       NewState = {UpdateState State [pos#{NewPos}]}
       {System.show NewState}
       ID = NewState.id
+      Direction = NDirection
       Position = NewState.pos
       NewState
    end

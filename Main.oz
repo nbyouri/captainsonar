@@ -77,7 +77,7 @@ in
       case Direction of surface then
 	  TurnSurface = Input.turnSurface %Add Broadcast and shit
       else
-	 {Send Port move(ID Position)} %Add Broadcast
+	 {Send Port movePlayer(ID Position)} %Add Broadcast
       end
       
    end
@@ -86,10 +86,10 @@ in
    
    proc{NewTurn PlayerPort Data FirstTurn}
       {System.show 'NewTurn'}
+      {Delay 1000}
       %Add victory condition to exit loop
-      case Data of nil then {NewTurn PlayerPort PlayerPort#SurfaceTurn false}
+      case Data of (nil#nil) then {NewTurn PlayerPort PlayerPort#SurfaceTurn false}
       [] (Submarine|ST)#(IsSurface|IST) then
-	 {System.show 'tuple'}
 	 {SubAction Submarine FirstTurn IsSurface}
 	 {NewTurn PlayerPort (ST#IST) FirstTurn}
       else
