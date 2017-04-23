@@ -16,8 +16,6 @@ in
    Port = {GUI.portWindow}
    {Send Port buildWindow}
    P1Port = {PlayerManager.playerGenerator Input.players Input.colors Input.nbPlayer}
-   {Send P1Port startPlayer(ID Pos)}
-   {Show ID}
+   {Send P1Port initPosition(ID Pos)}
    {Send Port initPlayer(ID Pos)}
-   
 end
