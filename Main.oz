@@ -66,6 +66,7 @@ in
       ID
       Direction
       Position
+      TSurface
    in
      {Send Submarine isSurface(ID IsSurf)} %Ask if Submarine is Surface
       if(TurnSurface > 0) then
@@ -75,7 +76,10 @@ in
       end
       {Send Submarine move(ID Position Direction)} %Ask for direction
       case Direction of surface then
-	  TurnSurface = Input.turnSurface %Add Broadcast and shit
+	 {System.show 'SURFACE'}
+	 {System.show TurnSurface}
+	 TSurface = Input.turnSurface %Add Broadcast and shit
+	 {System.show 'OK SURFACE'}
       else
 	 {Send Port movePlayer(ID Position)} %Add Broadcast
       end

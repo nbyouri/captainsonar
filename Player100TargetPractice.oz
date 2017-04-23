@@ -66,7 +66,7 @@ in
       end
    end
 
-   Directions = [north east west south]
+   Directions = [north east west south surface]
 
 %%%%%%%
 
@@ -99,26 +99,29 @@ in
    end
 
    fun{Move State ID Position Direction} NewState
-      fun{NewPos} Pos NDirection in
+      fun{NewPos} Pos N NDirection in
 	 N = 1 + ({OS.rand} mod ({Length Directions}))
 	 NDirection = {Nth Directions N}
-	 case Direction of
+	 case NDirection of
 	 east then Pos = pt(x:(State.pos.x) y:(State.pos.y+1))
 	 [] north then Pos = pt(x:(State.pos.x-1) y:(State.pos.y))
 	 [] south then Pos = pt(x:(State.pos.x+1) y:(State.pos.y))
 	 [] west then Pos = pt(x:(State.pos.x) y:(State.pos.y-1))
+	 [] surface then Pos = State.pos
 	 end
-	if {CanMove Pos} then
+	 if {CanMove Pos} then
+	    Direction = NDirection
 	    Pos
 	else
 	    {NewPos}
 	end
       end
    in
+      %case Direction of surface
+	 %NewState = {UpdateState State [surf#true]}
+      %end
       NewState = {UpdateState State [pos#{NewPos}]}
-      {System.show NewState}
       ID = NewState.id
-      Direction = NDirection
       Position = NewState.pos
       NewState
    end
