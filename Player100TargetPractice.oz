@@ -1,7 +1,7 @@
 functor
 import
    Input
-
+   System
    OS %rand
 export
    portPlayer:StartPlayer
@@ -88,23 +88,22 @@ in
       NewState
    end
 
-   fun{Move State ID Position Direction} %NewState in
-      fun{NewPos} Pos in
-	 Direction = {Nth Directions OS.rand mod {Length Directions}}
-	 case Direction 
-	 of east then  Pos = {MapRandomPos}
-     % [] north then {UpdateState State [pos#pt(x-1 y)]}
-     % [] south then {UpdateState State [pos#pt(x+1 y)]}
-     % [] west then {UpdateState State [pos#pt(x y-1)]}
+   fun{Move State ID Position Direction} NewState
+      fun{NewPos}
+	 Direction = {Nth Directions (1 + ({OS.rand} mod ({Length Directions})))}
+	 case Direction of
+	 east then pt(x:(State.pos.x) y:(State.pos.y+1))
+	 [] north then pt(x:(State.pos.x-1) y:(State.pos.y))
+	 [] south then pt(x:(State.pos.x+1) y:(State.pos.y))
+	 [] west then pt(x:(State.pos.x) y:(State.pos.y-1))
 	 end
-	 Pos
       end
    in
-      ID = State.id
-      {AdjoinList State [pos#{NewPos}]}
-      Position = State.pos
-     % NewState = {UpdateState State [surf#true]}
-     % NewState
+      NewState = {UpdateState State [pos#{NewPos}]}
+      {System.show NewState}
+      ID = NewState.id
+      Position = NewState.pos
+      NewState
    end
 
    fun{Dive State} NewState in

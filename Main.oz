@@ -31,7 +31,7 @@ in
       end
    end
    fun {MakeSurfaceTurn I}
-      if I > Input.nbPlayer then nil
+      if I >= Input.nbPlayer then nil
       else
 	 0 | {MakeSurfaceTurn I+1}
       end
@@ -53,12 +53,9 @@ in
    {LoadPlayer PlayerPort}
    SurfaceTurn = {MakeSurfaceTurn 0}
 
-   if(Input.isTurnByTurn) then {StartTurnByTurn}
-   else
-      {StartSimultaneous}
-   end
    proc{StartTurnByTurn}
-      {NewTurn PlayerPort PlayerPort#SurfaceTurn true}
+      {System.show 'Entering TurnByTurn'}
+      {NewTurn PlayerPort (PlayerPort#SurfaceTurn) true}
    end
   % proc{StartSimultaneous}
       %Launch simultaneous game
@@ -87,12 +84,22 @@ in
 
    
    
-   proc{NewTurn PlayerPort Submarines FirstTurn}
+   proc{NewTurn PlayerPort Data FirstTurn}
+      {System.show 'NewTurn'}
       %Add victory condition to exit loop
-      case Submarines of nil then {NewTurn PlayerPort PlayerPort#SurfaceTurn false}
-      [] Submarine#IsSurface|T then
+      case Data of nil then {NewTurn PlayerPort PlayerPort#SurfaceTurn false}
+      [] (Submarine|ST)#(IsSurface|IST) then
+	 {System.show 'tuple'}
 	 {SubAction Submarine FirstTurn IsSurface}
-	 {NewTurn PlayerPort T FirstTurn}
+	 {NewTurn PlayerPort (ST#IST) FirstTurn}
+      else
+	 skip
       end
-   end  
+   end
+
+   if (Input.isTurnByTurn) then
+      {System.show 'TurnByTurn ==>'}
+      {System.show PlayerPort#SurfaceTurn}
+      {NewTurn PlayerPort (PlayerPort#SurfaceTurn) true}
+   end
 end
