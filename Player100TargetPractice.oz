@@ -48,8 +48,6 @@ in
 	   )
    end
    
-   %Update un State avec une liste de tuple contenant les valeurs qui ont changé
-   % state(a:1 b:2) + [b#3] = state(a:1 b:3)
    fun{UpdateState State L}
       {AdjoinList State L}
    end
@@ -59,11 +57,7 @@ in
    end
    
    fun{MapIsWater Pos}
-      if {List.nth {List.nth Input.map Pos.x} Pos.y} == 0 then
-	 true
-      else
-	 false
-      end
+      {List.nth {List.nth Input.map Pos.x} Pos.y} == 0
    end
 
    Directions = [north east west south surface]
@@ -90,11 +84,10 @@ in
    end
 
    fun{CanMove Pos}
-      if (Pos.x >= Input.nRow) then false
-      elseif (Pos.y >= Input.nColumn) then false
-      elseif (Pos.x < 0) then false
-      elseif (Pos.y < 0) then false
-      else {MapIsWater Pos}
+      if (Pos.x < Input.nRow andthen Pos.y < Input.nColumn andthen Pos.x >= 0 andthen Pos.y >= 0) then
+	 {MapIsWater Pos}
+      else
+	 false
       end
    end
 

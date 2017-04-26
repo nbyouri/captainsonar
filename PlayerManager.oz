@@ -1,6 +1,7 @@
 functor
 import
    Player100TargetPractice
+   PlayerBasicAI
    System
 export
    playerGenerator:PlayerGenerator
@@ -12,6 +13,8 @@ in
       of nil then nil
       []targetPractice then
 	 {Player100TargetPractice.portPlayer Color ID}
+      []playerBasicAI then
+	 {PlayerBasicAI.portPlayer Color ID}
       else
 	 nil
       end
