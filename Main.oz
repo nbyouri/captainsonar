@@ -25,6 +25,8 @@ define
    BroadCastMessage
 
    IsAlive
+   StartSimultaneous
+   LaunchSubmarine
 in
 %%%%%%%%%%%Create Player %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    Port = {GUI.portWindow}
@@ -237,8 +239,88 @@ in
 	 {NewTurn NTState PlayerPort ST FirstTurn}
       end
    end
+%%%%%%%%Simultaneous%%%%%%%%%%
+   %%%%%%%%%%%%%%%%Simultaneous game %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   proc{LaunchSubmarine Submarine Beginning}
+      ID
+      Direction
+      Position
+      KindItem
+      KindFire
+      Mine
+   in
+      {System.show 'Launch sub'}
+      case Beginning of yes then {Send Submarine dive}
+      [] no then skip
+      end
+      {Delay Input.thinkMin}
+      {Send Submarine move(ID Position Direction)}
+      case Direction of surface then {Delay Input.turnSurface * 1000}
+      else skip
+      end
+      {Send Port movePlayer(ID Position)}
+      {BroadCast Direction ID PlayerPort}
+
+      {Delay Input.thinkMin}
+%%%%%%%%%% ITEM %%%%%%%%
+
+      	 {Send Submarine chargeItem(ID KindItem)} %Ask for charge
+	 case KindItem of null then skip
+	 [] H then {BroadCast KindItem#charge ID PlayerPort} %BroadCast Charge
+	 else skip
+	 end
+	 {Delay Input.thinkMin}
+      %%%%%%%%%%%% Fire %%%%%%
+	 {Send Submarine fireItem(ID KindFire)} %Ask for fire item
+	 case KindFire of null then skip
+	 [] mine(Pos) then
+	    {BroadCast KindFire#place ID PlayerPort} %broadcast mine placed
+	    %Check if the sub is hit by the explosien maybe ?
+	 [] missile(Pos) then
+	    {BroadCast KindFire ID PlayerPort}
+	    %Check if the sub is hit by the explosion
+	 [] drone(H) then
+	    {BroadCast KindFire ID PlayerPort}
+	    %Broadcast the drone
+	 [] sonar then
+	    {BroadCast KindFire ID PlayerPort}
+	    %Broadcast the sonar
+	 else skip
+	 end
+	 {Delay Input.thinkMin}
+%%%%%%%%%%% MINE %%%%%%%%
+	 {Send Submarine fireMine(ID Mine)}%Ask for mine explosion
+	 case Mine of nil then skip
+	 [] H then
+	    {BroadCast KindFire#explode ID PlayerPort}
+	 end
+	 case ID of null then skip
+	 else
+	    {LaunchSubmarine Submarine no}
+	 end
+   end
+   
+
+
+   proc{StartSimultaneous}
+      LaunchGame
+   in
+      proc{LaunchGame Submarines PlayerPort}
+	 case Submarines of nil then skip
+	 [] H|T then
+	    thread {LaunchSubmarine H yes} end
+	    {LaunchGame T PlayerPort}
+	 end
+      end
+      {LaunchGame PlayerPort PlayerPort}
+   end
+
+
+   %%%%%%%%%%%%%%%%%%%%%
    if (Input.isTurnByTurn) then
       {StartTurnByTurn}
+   else
+      {StartSimultaneous}
    end
 end
