@@ -118,7 +118,9 @@ in
 	 end
       [] drone(Pos) then
 	 {Send Submarine sayPassingDrone(Message IDAns Ans)}
-	 {BroadCast Ans#drone IDAns PlayerPort} %Broadcast drone Ans
+	 case IDAns of null then skip
+	 else{BroadCast Ans#drone IDAns PlayerPort} %Broadcast drone Ans
+	 end
       [] sonar then
 	 {Send Submarine sayPassingSonar(IDAns Ans)}
 	 case IDAns of null then skip
@@ -174,6 +176,7 @@ in
 	 [] H then
 	 {Send Submarine move(ID Position Direction)} %Ask for direction
 	 case Direction of surface then
+	    {Send Port surface(ID)}
 	    SubState = {UpdateState State.(ID.id) [surf#Input.turnSurface]}
 	    NewState = {UpdateState State [ID.id#SubState]}
 	 else
@@ -250,13 +253,14 @@ in
       KindFire
       Mine
    in
-      {System.show 'Launch sub'}
       case Beginning of yes then {Send Submarine dive}
       [] no then skip
       end
       {Delay Input.thinkMin}
       {Send Submarine move(ID Position Direction)}
-      case Direction of surface then {Delay Input.turnSurface * 1000}
+      case Direction of surface then
+	 {Send Port surface(ID)}
+	 {Delay Input.turnSurface * 1000}
       else skip
       end
       {Send Port movePlayer(ID Position)}
@@ -319,8 +323,10 @@ in
 
    %%%%%%%%%%%%%%%%%%%%%
    if (Input.isTurnByTurn) then
+      {System.show 'SratTurnByTurn'}
       {StartTurnByTurn}
    else
+      {System.show 'StartSimultaneous'}
       {StartSimultaneous}
    end
 end
