@@ -2,12 +2,9 @@ functor
 import
    GUI
    Input
-   PlayerManager
    System
+   PlayerManager
 define
-   TurnbyTurn
-   Simulatenous
-
    Port
    PlayerPort
    NewPlayer
@@ -74,9 +71,6 @@ in
    proc{StartTurnByTurn}
       {NewTurn {InitState state()} PlayerPort PlayerPort true}
    end
-  % proc{StartSimultaneous}
-      %Launch simultaneous game
-  % end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    proc{BroadCastMessage Message ID Submarine}
       Ans
@@ -104,8 +98,10 @@ in
 	 [] sayDeath(DamageID) then
 	    {Send Port removePlayer(DamageID)}
 	    {BroadCast Ans Ans.1 PlayerPort} %Broadcast damage
-	 else
+	 [] sayDamageTaken(DamageID _ LifeLeft) then
+	    {Send Port lifeUpdate(DamageID LifeLeft)}
 	    {BroadCast Ans Ans.1 PlayerPort}
+	 else skip 
 	 end
       [] missile(Pos) then
 	 {Send Submarine sayMissileExplode(ID Pos Ans)}
@@ -113,10 +109,12 @@ in
 	 [] sayDeath(DamageID) then
 	    {Send Port removePlayer(DamageID)}
 	    {BroadCast Ans Ans.1 PlayerPort}
-	 else
+	 [] sayDamageTaken(DamageID _ LifeLeft) then
+	    {Send Port lifeUpdate(DamageID LifeLeft)}
 	    {BroadCast Ans Ans.1 PlayerPort}
+	 else skip
 	 end
-      [] drone(Pos) then
+      [] drone(_) then
 	 {Send Submarine sayPassingDrone(Message IDAns Ans)}
 	 case IDAns of null then skip
 	 else{BroadCast Ans#drone IDAns PlayerPort} %Broadcast drone Ans
@@ -127,14 +125,13 @@ in
 	 else {BroadCast Ans#sonar IDAns PlayerPort} %BroadCast sonar Ans
 	 end
       [] Ans#drone then
-	 {Send Submarine sayAnswerDrone(ID Message)}
+	 {Send Submarine sayAnswerDrone(ID Ans)}
       [] Ans#sonar then
-	 {Send Submarine sayAnswerSonar(ID Message)}
+	 {Send Submarine sayAnswerSonar(ID Ans)}
       [] sayDeath(DamageID) then
 	 {Send Submarine sayDeath(DamageID)}
       [] sayDamageTaken(DamageID Damage LifeLeft) then
 	 {Send Submarine sayDamageTaken(DamageID Damage LifeLeft)}
-	 {Send Port lifeUpdate(ID LifeLeft)}
       else
 	 skip
       end
@@ -173,7 +170,7 @@ in
       else Leave = no
       end
       case Leave of yes then skip
-	 [] H then
+      [] _ then
 	 {Send Submarine move(ID Position Direction)} %Ask for direction
 	 case Direction of surface then
 	    {Send Port surface(ID)}
@@ -188,19 +185,19 @@ in
          %%%%%%%%%%% ITEM %%%%%%%%%%%%%
 	 {Send Submarine chargeItem(ID KindItem)} %Ask for charge
 	 case KindItem of null then skip
-	 [] H then {BroadCast KindItem#charge ID PlayerPort} %BroadCast Charge
+	 [] _ then {BroadCast KindItem#charge ID PlayerPort} %BroadCast Charge
 	 else skip
 	 end
          %%%%%%%%%%% FIRE %%%%%%%%%%%%%
 	 {Send Submarine fireItem(ID KindFire)}
 	 case KindFire of null then skip
-	 [] mine(Pos) then
+	 [] mine(_) then
 	    {BroadCast KindFire#place ID PlayerPort} %broadcast mine placed
 	    %Check if the sub is hit by the explosien maybe ?
-	 [] missile(Pos) then
+	 [] missile(_) then
 	    {BroadCast KindFire ID PlayerPort}
 	    %Check if the sub is hit by the explosion
-	 [] drone(H) then
+	 [] drone(_) then
 	    {BroadCast KindFire ID PlayerPort}
 	    %Broadcast the drone
 	 [] sonar then
@@ -209,18 +206,19 @@ in
 	 else
 	    skip
 	 end
-         %%%%%%%%%% MINE %%%%%%%%%%%%
-	 {Send Submarine fireMine(ID Mine)}%Ask for mine explosion
-	 case Mine of null then skip
-	 [] H then
-	    {BroadCast KindFire#explode ID PlayerPort}
-	 else skip
+	 if {IsAlive Submarine} then
+	    {Send Submarine fireMine(ID Mine)}%Ask for mine explosion
+	    case Mine of null then skip
+	    [] _ then
+	       {BroadCast KindFire#explode ID PlayerPort}
+	    else skip
+	    end
 	 end
       end
    end
 
-   fun{IsAlive Sub} ID Ans in
-      {Send Sub isSurface(ID Ans)}
+   fun{IsAlive Sub} ID in
+      {Send Sub isSurface(ID _)}
       case ID of null then
 	 false
       else true
@@ -230,7 +228,7 @@ in
    proc{NewTurn State PlayerPort Data FirstTurn}
       NTState
    in
-      {Delay 200}
+      %{Delay 200}
       %Add victory condition to exit loop
       case Data of nil then {NewTurn State PlayerPort PlayerPort false}
       [] Submarine|ST then
@@ -267,46 +265,44 @@ in
       {BroadCast Direction ID PlayerPort}
 
       {Delay Input.thinkMin}
-%%%%%%%%%% ITEM %%%%%%%%
-
-      	 {Send Submarine chargeItem(ID KindItem)} %Ask for charge
-	 case KindItem of null then skip
-	 [] H then {BroadCast KindItem#charge ID PlayerPort} %BroadCast Charge
-	 else skip
-	 end
-	 {Delay Input.thinkMin}
+      %%%%%%%%%% ITEM %%%%%%%%
+      
+      {Send Submarine chargeItem(ID KindItem)} %Ask for charge
+      case KindItem of null then skip
+      [] _ then {BroadCast KindItem#charge ID PlayerPort} %BroadCast Charge
+      else skip
+      end
+      {Delay Input.thinkMin}
       %%%%%%%%%%%% Fire %%%%%%
-	 {Send Submarine fireItem(ID KindFire)} %Ask for fire item
-	 case KindFire of null then skip
-	 [] mine(Pos) then
-	    {BroadCast KindFire#place ID PlayerPort} %broadcast mine placed
-	    %Check if the sub is hit by the explosien maybe ?
-	 [] missile(Pos) then
-	    {BroadCast KindFire ID PlayerPort}
-	    %Check if the sub is hit by the explosion
-	 [] drone(H) then
-	    {BroadCast KindFire ID PlayerPort}
-	    %Broadcast the drone
-	 [] sonar then
-	    {BroadCast KindFire ID PlayerPort}
-	    %Broadcast the sonar
-	 else skip
-	 end
-	 {Delay Input.thinkMin}
-%%%%%%%%%%% MINE %%%%%%%%
-	 {Send Submarine fireMine(ID Mine)}%Ask for mine explosion
-	 case Mine of nil then skip
-	 [] H then
-	    {BroadCast KindFire#explode ID PlayerPort}
-	 end
-	 case ID of null then skip
-	 else
-	    {LaunchSubmarine Submarine no}
-	 end
+      {Send Submarine fireItem(ID KindFire)} %Ask for fire item
+      case KindFire of null then skip
+      [] mine(_) then
+	 {BroadCast KindFire#place ID PlayerPort} %broadcast mine placed
+	 %Check if the sub is hit by the explosien maybe ?
+      [] missile(_) then
+	 {BroadCast KindFire ID PlayerPort}
+	 %Check if the sub is hit by the explosion
+      [] drone(_) then
+	 {BroadCast KindFire ID PlayerPort}
+	 %Broadcast the drone
+      [] sonar then
+	 {BroadCast KindFire ID PlayerPort}
+	 %Broadcast the sonar
+      else skip
+      end
+      {Delay Input.thinkMin}
+      %%%%%%%%%%% MINE %%%%%%%%
+      {Send Submarine fireMine(ID Mine)}%Ask for mine explosion
+      case Mine of nil then skip
+      [] _ then
+	 {BroadCast KindFire#explode ID PlayerPort}
+      end
+      case ID of null then skip
+      else
+	 {LaunchSubmarine Submarine no}
+      end
    end
    
-
-
    proc{StartSimultaneous}
       LaunchGame
    in
@@ -321,12 +317,10 @@ in
    end
 
 
-   %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%
    if (Input.isTurnByTurn) then
-      {System.show 'SratTurnByTurn'}
       {StartTurnByTurn}
    else
-      {System.show 'StartSimultaneous'}
       {StartSimultaneous}
    end
 end

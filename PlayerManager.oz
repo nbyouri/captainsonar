@@ -2,7 +2,6 @@ functor
 import
    Player100TargetPractice
    PlayerBasicAI
-   System
 export
    playerGenerator:PlayerGenerator
 define

@@ -1,7 +1,7 @@
 functor
 import
    Input
-   System
+   %System
    OS %rand
 export
    portPlayer:StartPlayer
@@ -92,10 +92,9 @@ in
    end
 
    fun{Move State ID Position Direction} NewState
-      fun{NewPos} Pos N NDirection in
-	 N = 1 + ({OS.rand} mod ({Length Directions}))
-	 NDirection = {Nth Directions N}
-	 case NDirection of
+      fun{NewPos} Pos Direction in
+	 Direction = {Nth Directions ({OS.rand} mod ({Length Directions}))}
+	 case Direction of
 	 east then Pos = pt(x:(State.pos.x) y:(State.pos.y+1))
 	 [] north then Pos = pt(x:(State.pos.x-1) y:(State.pos.y))
 	 [] south then Pos = pt(x:(State.pos.x+1) y:(State.pos.y))
@@ -103,11 +102,10 @@ in
 	 [] surface then Pos = State.pos
 	 end
 	 if {CanMove Pos} then
-	    Direction = NDirection
 	    Pos
 	else
 	    {NewPos}
-	end
+	 end
       end
    in
       %case Direction of surface

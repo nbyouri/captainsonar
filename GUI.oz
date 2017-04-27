@@ -226,8 +226,8 @@ in
       case State
       of nil then nil
       [] guiPlayer(id:ID score:HandleScore submarine:Handle mines:M path:P)|Next then
-	 {HandleScore set(0)}
 	 if (ID == WantedID) then
+	    {HandleScore set(0)}
 	    for H in P do
 	       {RemoveItem Grid H}
 	    end
@@ -277,19 +277,15 @@ in
 	 {TreatStream T Grid {StateModification Grid ID State RemovePath}}
       [] removePlayer(ID)|T then
 	 {TreatStream T Grid {RemovePlayer Grid ID State}}
-      [] explosion(ID Position)|T then
-	 {TreatStream T Grid State}
-      [] drone(ID Drone)|T then
-	 {TreatStream T Grid State}
-      [] sonar(ID)|T then
-	 {TreatStream T Grid State}
+      %[] explosion(ID Position)|T then
+      %  {TreatStream T Grid State}
+      %[] drone(ID Drone)|T then
+      %	 {TreatStream T Grid State}
+      %[] sonar(ID)|T then
+      %	 {TreatStream T Grid State}
       [] _|T then
 	 {TreatStream T Grid State}
       end
    end
-   
-  
-
-   
 end
 
