@@ -244,63 +244,69 @@ in
    %%%%%%%%%%%%%%%%Simultaneous game %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
    proc{LaunchSubmarine Submarine Beginning}
-      ID
+      MoveID
+      KindID
+      FireID
+      MineID
+      NullID
       Direction
       Position
       KindItem
       KindFire
       Mine
+      Ans
    in
       case Beginning of yes then {Send Submarine dive}
       [] no then skip
       end
       {Delay Input.thinkMin}
-      {Send Submarine move(ID Position Direction)}
+      {Send Submarine move(MoveID Position Direction)}
       case Direction of surface then
-	 {Send Port surface(ID)}
+	 {Send Port surface(MoveID)}
 	 {Delay Input.turnSurface * 1000}
       else skip
       end
-      {Send Port movePlayer(ID Position)}
-      {BroadCast Direction ID PlayerPort}
+      {Send Port movePlayer(MoveID Position)}
+      {BroadCast Direction MoveID PlayerPort}
 
       {Delay Input.thinkMin}
-      %%%%%%%%%% ITEM %%%%%%%%
-      
-      {Send Submarine chargeItem(ID KindItem)} %Ask for charge
-      case KindItem of null then skip
-      [] _ then {BroadCast KindItem#charge ID PlayerPort} %BroadCast Charge
-      else skip
-      end
-      {Delay Input.thinkMin}
+%%%%%%%%%% ITEM %%%%%%%%
+
+      	 {Send Submarine chargeItem(KindID KindItem)} %Ask for charge
+	 case KindItem of null then skip
+	 [] H then {BroadCast KindItem#charge KindID PlayerPort} %BroadCast Charge
+	 else skip
+	 end
+	 {Delay Input.thinkMin}
       %%%%%%%%%%%% Fire %%%%%%
-      {Send Submarine fireItem(ID KindFire)} %Ask for fire item
-      case KindFire of null then skip
-      [] mine(_) then
-	 {BroadCast KindFire#place ID PlayerPort} %broadcast mine placed
-	 %Check if the sub is hit by the explosien maybe ?
-      [] missile(_) then
-	 {BroadCast KindFire ID PlayerPort}
-	 %Check if the sub is hit by the explosion
-      [] drone(_) then
-	 {BroadCast KindFire ID PlayerPort}
-	 %Broadcast the drone
-      [] sonar then
-	 {BroadCast KindFire ID PlayerPort}
-	 %Broadcast the sonar
-      else skip
-      end
-      {Delay Input.thinkMin}
-      %%%%%%%%%%% MINE %%%%%%%%
-      {Send Submarine fireMine(ID Mine)}%Ask for mine explosion
-      case Mine of nil then skip
-      [] _ then
-	 {BroadCast KindFire#explode ID PlayerPort}
-      end
-      case ID of null then skip
-      else
-	 {LaunchSubmarine Submarine no}
-      end
+	 {Send Submarine fireItem(FireID KindFire)} %Ask for fire item
+	 case KindFire of null then skip
+	 [] mine(Pos) then
+	    {BroadCast KindFire#place FireID PlayerPort} %broadcast mine placed
+	    %Check if the sub is hit by the explosien maybe ?
+	 [] missile(Pos) then
+	    {BroadCast KindFire FireID PlayerPort}
+	    %Check if the sub is hit by the explosion
+	 [] drone(H) then
+	    {BroadCast KindFire FireID PlayerPort}
+	    %Broadcast the drone
+	 [] sonar then
+	    {BroadCast KindFire FireID PlayerPort}
+	    %Broadcast the sonar
+	 else skip
+	 end
+	 {Delay Input.thinkMin}
+%%%%%%%%%%% MINE %%%%%%%%
+	 {Send Submarine fireMine(MineID Mine)}%Ask for mine explosion
+	 case Mine of nil then skip
+	 [] H then
+	    {BroadCast KindFire#explode MineID PlayerPort}
+	 end
+	 {Send Submarine isSurface(NullID Ans)}
+	 case NullID of null then skip
+	 else
+	    {LaunchSubmarine Submarine no}
+	 end
    end
    
    proc{StartSimultaneous}
