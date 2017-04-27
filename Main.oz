@@ -119,7 +119,9 @@ in
 	 {BroadCast Ans#drone IDAns PlayerPort} %Broadcast drone Ans
       [] sonar then
 	 {Send Submarine sayPassingSonar(IDAns Ans)}
-	 {BroadCast Ans#sonar IDAns PlayerPort} %BroadCast sonar Ans
+	 case IDAns of null then skip
+	 else {BroadCast Ans#sonar IDAns PlayerPort} %BroadCast sonar Ans
+	 end
       [] Ans#drone then
 	 {Send Submarine sayAnswerDrone(ID Message)}
       [] Ans#sonar then
@@ -178,16 +180,14 @@ in
 	    NewState = {UpdateState State [(ID.id)#SubState]}
 	 end
 	 {BroadCast Direction ID PlayerPort}
-
          %%%%%%%%%%% ITEM %%%%%%%%%%%%%
 	 {Send Submarine chargeItem(ID KindItem)} %Ask for charge
 	 case KindItem of null then skip
 	 [] H then {BroadCast KindItem#charge ID PlayerPort} %BroadCast Charge
 	 else skip
 	 end
-
          %%%%%%%%%%% FIRE %%%%%%%%%%%%%
-	 {Send Submarine fireItem(ID KindFire)} %Ask for fire item
+	 {Send Submarine fireItem(ID KindFire)}
 	 case KindFire of null then skip
 	 [] mine(Pos) then
 	    {BroadCast KindFire#place ID PlayerPort} %broadcast mine placed
@@ -201,14 +201,15 @@ in
 	 [] sonar then
 	    {BroadCast KindFire ID PlayerPort}
 	    %Broadcast the sonar
-	 else skip
+	 else
+	    skip
 	 end
-
          %%%%%%%%%% MINE %%%%%%%%%%%%
 	 {Send Submarine fireMine(ID Mine)}%Ask for mine explosion
-	 case Mine of nil then skip
+	 case Mine of null then skip
 	 [] H then
 	    {BroadCast KindFire#explode ID PlayerPort}
+	 else skip
 	 end
       end
    end
@@ -230,6 +231,8 @@ in
       [] Submarine|ST then
 	 if {IsAlive Submarine} then
 	    {SubAction State NTState Submarine FirstTurn}
+	 else
+	    NTState = State
 	 end
 	 {NewTurn NTState PlayerPort ST FirstTurn}
       end
