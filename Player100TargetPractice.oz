@@ -1,7 +1,7 @@
 functor
 import
    Input
-   %System
+   System
    OS %rand
 export
    portPlayer:StartPlayer
@@ -36,6 +36,8 @@ define
    SayDamageTaken
 
    Directions
+   RandomDirection
+   UpdatePos
 in
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -91,27 +93,33 @@ in
       end
    end
 
-   fun{Move State ID Position Direction} NewState
-      fun{NewPos} Pos Direction in
-	 Direction = {Nth Directions ({OS.rand} mod ({Length Directions}))}
-	 case Direction of
+   fun{RandomDirection}
+      {Nth Directions (({OS.rand} mod ({Length Directions})) + 1)}
+   end
+
+   fun{UpdatePos State Direction} Pos in
+      case Direction of
 	 east then Pos = pt(x:(State.pos.x) y:(State.pos.y+1))
-	 [] north then Pos = pt(x:(State.pos.x-1) y:(State.pos.y))
-	 [] south then Pos = pt(x:(State.pos.x+1) y:(State.pos.y))
-	 [] west then Pos = pt(x:(State.pos.x) y:(State.pos.y-1))
-	 [] surface then Pos = State.pos
-	 end
-	 if {CanMove Pos} then
-	    Pos
-	else
-	    {NewPos}
-	 end
+      [] north then Pos = pt(x:(State.pos.x-1) y:(State.pos.y))
+      [] south then Pos = pt(x:(State.pos.x+1) y:(State.pos.y))
+      [] west then Pos = pt(x:(State.pos.x) y:(State.pos.y-1))
+      [] surface then Pos = State.pos
       end
-   in
-      %case Direction of surface
-	 %NewState = {UpdateState State [surf#true]}
-      %end
-      NewState = {UpdateState State [pos#{NewPos}]}
+      if {CanMove Pos} then
+	 Pos
+      else
+	 {UpdatePos State {RandomDirection}}
+      end
+   end
+    
+   fun{Move State ID Position Direction} NewState in
+      Direction = {RandomDirection}
+     
+      case Direction of surface then
+	 NewState = {UpdateState State [surf#true]}
+      else
+	 NewState = {UpdateState State [pos#{UpdatePos State Direction}]}
+      end
       ID = NewState.id
       Position = NewState.pos
       NewState
