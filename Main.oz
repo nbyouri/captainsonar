@@ -2,7 +2,6 @@ functor
 import
    GUI
    Input
-   System
    PlayerManager
 define
    Port
@@ -83,7 +82,7 @@ in
       [] west then
 	 {Send Submarine sayMove(ID west)}
       [] north then
-	 {Send Submarine sayove(ID north)}
+	 {Send Submarine sayMove(ID north)}
       [] south then
 	 {Send Submarine sayMove(ID south)}
       [] KindItem#charge then
@@ -254,7 +253,6 @@ in
       KindItem
       KindFire
       Mine
-      Ans
    in
       case Beginning of yes then {Send Submarine dive}
       [] no then skip
@@ -274,20 +272,20 @@ in
 
       	 {Send Submarine chargeItem(KindID KindItem)} %Ask for charge
 	 case KindItem of null then skip
-	 [] H then {BroadCast KindItem#charge KindID PlayerPort} %BroadCast Charge
+	 [] _ then {BroadCast KindItem#charge KindID PlayerPort} %BroadCast Charge
 	 else skip
 	 end
 	 {Delay Input.thinkMin}
       %%%%%%%%%%%% Fire %%%%%%
 	 {Send Submarine fireItem(FireID KindFire)} %Ask for fire item
 	 case KindFire of null then skip
-	 [] mine(Pos) then
+	 [] mine(_) then
 	    {BroadCast KindFire#place FireID PlayerPort} %broadcast mine placed
 	    %Check if the sub is hit by the explosien maybe ?
-	 [] missile(Pos) then
+	 [] missile(_) then
 	    {BroadCast KindFire FireID PlayerPort}
 	    %Check if the sub is hit by the explosion
-	 [] drone(H) then
+	 [] drone(_) then
 	    {BroadCast KindFire FireID PlayerPort}
 	    %Broadcast the drone
 	 [] sonar then
@@ -299,10 +297,10 @@ in
 %%%%%%%%%%% MINE %%%%%%%%
 	 {Send Submarine fireMine(MineID Mine)}%Ask for mine explosion
 	 case Mine of nil then skip
-	 [] H then
+	 [] _ then
 	    {BroadCast KindFire#explode MineID PlayerPort}
 	 end
-	 {Send Submarine isSurface(NullID Ans)}
+	 {Send Submarine isSurface(NullID _)}
 	 case NullID of null then skip
 	 else
 	    {LaunchSubmarine Submarine no}

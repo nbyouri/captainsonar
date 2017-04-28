@@ -1,4 +1,6 @@
 functor
+import
+   OS
 export
    isTurnByTurn:IsTurnByTurn
    nRow:NRow
@@ -39,6 +41,11 @@ define
    MaxDistanceMine
    MinDistanceMissile
    MaxDistanceMissile
+   GenMap
+   GenRow
+   AddOnes
+   RandomIndex
+   MaxOnes
 in
 
 %%%% Style of game %%%%
@@ -50,22 +57,78 @@ in
    NRow = 10
    NColumn = 10
 
-   Map = [[0 0 0 0 0 0 0 0 0 0]
-	  [0 0 0 0 0 0 0 0 0 0]
-	  [0 0 0 1 1 0 0 0 0 0]
-	  [0 0 1 1 0 0 1 0 0 0]
-	  [0 0 0 0 0 0 0 0 0 0]
-	  [0 0 0 0 0 0 0 0 0 0]
-	  [0 0 0 1 0 0 1 1 0 0]
-	  [0 0 1 1 0 0 1 0 0 0]
-	  [0 0 0 0 0 0 0 0 0 0]
-	  [0 0 0 0 0 0 0 0 0 0]]
+   MaxOnes = 3
+
+   fun{RandomIndex Max}
+      ({OS.rand} mod Max)
+   end
+   
+   fun{GenRow NColumn}
+      fun{Zero Row}
+	 case Row of nil then nil
+	 [] _|T then
+	    0|{Zero T}
+	 end
+      end
+   in
+      {Zero {List.make NColumn}}
+   end
+   
+   fun{GenMap NRow NColumn NOnes}
+      fun{GenMapRows Map NColumn}
+	 case Map of nil then nil
+	 [] _|T then
+	    {AddOnes {GenRow NColumn} NRow NOnes}|{GenMapRows T NColumn}
+	 end
+      end
+   in
+      {GenMapRows {List.make NRow} NColumn}
+   end
+
+   fun{AddOnes Row NRow NOnes}
+      fun{One Row Acc I}
+	 case Row of nil then nil
+	 [] H|T then
+	    if I == Acc then
+	       if H == 0 then 1|T
+	       else 0|T
+	       end
+	    else
+	       H|{One T Acc+1 I}
+	    end
+	 end
+      end
+      fun{Ones Row NOnes} NewRow in
+	 if NOnes == 0 then
+	    NewRow = {One Row 0 {RandomIndex NRow}}
+	 else
+	    NewRow = {One Row 0 {RandomIndex NRow}}
+	    {Ones NewRow NOnes-1}
+	 end
+      end
+   in
+      {Ones Row {RandomIndex MaxOnes}}
+   end
+
+   Map = {GenMap NRow NColumn MaxOnes}
+   %     Map = [[0 0 0 0 0 0 0 0 0 0]
+%	     [0 0 0 0 0 0 0 0 0 0]
+%	     [0 0 0 1 1 0 0 0 0 0]
+%	     [0 0 1 1 0 0 1 0 0 0]
+%	     [0 0 0 0 0 0 0 0 0 0]
+%	     [0 0 0 0 0 0 0 0 0 0]
+%	     [0 0 0 1 0 0 1 1 0 0]
+%	     [0 0 1 1 0 0 1 0 0 0]
+%	     [0 0 0 0 0 0 0 0 0 0]
+%	     [0 0 0 0 0 0 0 0 0 0]]
+ %  end
 
 %%%% Players description %%%%
    
    NbPlayer = 4
-   Players = [playerBasicAI playerBasicAI playerBasicAI playerBasicAI]
-   Colors = [green yellow blue red]
+   %Players = [targetPractice targetPractice]
+   Players = [playerBasicAI playerBasicAI player033RandAI player033RandAI]
+   Colors = [green yellow red blue]
 
 %%%% Thinking parameters (only in simultaneous) %%%%
    
