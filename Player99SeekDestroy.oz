@@ -182,10 +182,10 @@ in
       NewState
    end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   fun{ChargeItem State ID KindItem}
+   fun{ChargeItem State ID KindItem} NewState in
       if State.dead then
-      ID = null
-      KindItem = null
+	 ID = null
+	 KindItem = null
 	 State
       else
 	 case State.mode of seek then
@@ -197,15 +197,21 @@ in
 	       else
 		  KindItem = null
 	       end
-	    elseif State.droneCharge<Input.drone then
+	    elseif State.droneCharge < Input.drone then
 	       NewState = {UpdateState State [droneCharge#State.droneCharge+1]}
 	       ID = NewState.id
 	       if NewState.droneCharge == Input.drone then
 	       KindItem = drone
-	    else
+	       else
 	       KindItem = null
+	       end
 	    end
-	    end
+	 else
+	    NewState = State
+	    ID = NewState.id
+	    KindItem = null
+	 end
+	 NewState
       end
    end
 
