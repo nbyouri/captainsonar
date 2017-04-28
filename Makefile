@@ -3,6 +3,6 @@ TARGET=Main.ozf
 
 all:
 	@for src in ${SRC}; do \
-	ozc $$src;	\
+	ozc -c $$src;	\
 	done
 	ozengine ${TARGET}

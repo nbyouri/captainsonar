@@ -1,7 +1,6 @@
 functor
 import
    Input
-   System
    OS %rand
 export
    portPlayer:StartPlayer
@@ -10,7 +9,6 @@ define
    TreatStream
 
    InitState
-   InitStateEnemies
    UpdateState
    MapRandomPos
    MapIsWater
@@ -38,7 +36,6 @@ define
 
    Directions
 
-   StateModification
    Items
    RandomItem
    RandomEnemy
@@ -259,8 +256,6 @@ in
       else
 	 Item = {RandomItem}
 	 N = {RandomEnemy}
-	 {System.show Item}
-	 {System.show N}
 	 case Item of sonar then
 	    if State.sonarCharge >= Input.sonar then
 	       %FIRE SONAR
@@ -274,9 +269,7 @@ in
 	    if State.enemies.N.spotted andthen State.missileCharge >= Input.missile andthen
 	       {DistTo State.pos State.enemies.N.pos} =< Input.maxDistanceMissile andthen
 	       {DistTo State.pos State.enemies.N.pos} >= Input.minDistanceMissile then
-	       {System.show fire(State.id.id State.focus)}
 	       KindFire = missile(State.enemies.N.pos)
-	       {System.show 'charge missile'}
 	       NewState = {UpdateState State [missileCharge#(State.missileCharge - Input.missile)]}
 	    else
 	       KindFire = null
