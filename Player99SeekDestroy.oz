@@ -191,7 +191,7 @@ in
 	 case State.mode of seek then
 	    if State.sonarCharge < Input.sonar then
 	       NewState = {UpdateState State [sonarCharge#State.sonarCharge+1]}
-	       ID = newState.id
+	       ID = NewState.id
 	       if NewState.sonarCharge == Input.sonar then
 		  KindItem = sonar
 	       else
@@ -216,10 +216,46 @@ in
    end
 
    fun{FireItem State ID KindFire}
-      ID = State.id
-      KindFire = null
-      State
+      fun{DistTo Pos1 Pos2}
+	 {Number.abs Pos1.x-Pos2.x} + {Number.abs Pos1.y-Pos2.y}
+      end
+      NewState
+   in
+      if State.dead then
+	 KindFire = null
+	 ID = null
+	 State
+      else
+	 case State.focus
+	 of null then
+	    if State.sonarCharge == Input.sonar then
+	       %FIRE SONAR
+	       KindFire = sonar
+	       NewState = {UpdateState State [sonarCharge#(State.sonarCharge - Input.sonar)]}
+	    else
+	       NewState = State
+	       KindFire = null
+	    end
+	 []N then
+	    case State.mode of destroy then
+	       if State.missileCharge == Input.missile andthen
+		  {DistTo State.pos State.enemies.N.pos} =< Input.maxDistanceMissile andthen
+		  {DistTo State.pos State.enemies.N.pos} >= Input.minDistanceMissile then
+		  {System.show fire(State.id.id State.focus)}
+		  KindFire = missile(State.enemies.N.pos)
+		  {System.show 'charge missile'}
+		  NewState = {UpdateState State [missileCharge#(State.missileCharge - Input.missile)]}
+	       end
+	    else
+	       NewState = State
+	       KindFire = null
+	    end
+	 end
+	 ID = NewState.id
+	 NewState
+      end
    end
+
 
    fun{FireMine State ID Mine}
       ID = State.id

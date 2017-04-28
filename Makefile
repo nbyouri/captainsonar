@@ -1,4 +1,4 @@
-SRC=GUI.oz Input.oz Player100TargetPractice.oz PlayerManager.oz Main.oz 
+SRC=*.oz
 TARGET=Main.ozf
 
 all:
