@@ -262,8 +262,8 @@ in
 	       KindFire = sonar
 	       NewState = {UpdateState State [sonarCharge#(State.sonarCharge - Input.sonar)]}
 	    else
-	       NewState = State
 	       KindFire = null
+	       NewState = State
 	    end
 	 [] missile then
 	    if State.enemies.N.spotted andthen State.missileCharge >= Input.missile andthen

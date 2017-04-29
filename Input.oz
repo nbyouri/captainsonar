@@ -126,7 +126,7 @@ in
 %%%% Players description %%%%
    
    NbPlayer = 4
-   Players = [dumb dumb dumb dumb]
+   Players = [dumb dumb dumb seekDestroy]
    Colors = [green yellow blue red]
 
 %%%% Thinking parameters (only in simultaneous) %%%%

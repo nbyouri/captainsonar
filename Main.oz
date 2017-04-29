@@ -3,6 +3,7 @@ import
    GUI
    Input
    PlayerManager
+   OS
    System
 define
    Port
@@ -24,6 +25,7 @@ define
    IsAlive
    StartSimultaneous
    LaunchSubmarine
+   SimulateThinking
 in
 %%%%%%%%%%%Create Player %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    Port = {GUI.portWindow}
@@ -63,6 +65,13 @@ in
    fun{UpdateState State L}
       {AdjoinList State L}
    end
+
+   proc{SimulateThinking}
+      Value
+   in
+      Value = Input.thinkMin + ({OS.rand} mod (Input.thinkMax - Input.thinkMin))
+      {Delay Value}
+   end 
 
 %%%%%%%%%%%%%%%%Start Game %%%%%%%%%%%%%%%%%%%%%%%%%%
    PlayerPort = {NewPlayer 1}
@@ -157,8 +166,9 @@ in
       KindFire
       Mine
    in
+      {Delay 200}
       {Send Submarine isSurface(ID IsSurf)} %Ask if Submarine is Surface
-      %%%%%%%%%% MOVING %%%%%%%%%%%%%
+%%%%%%%%%% MOVING %%%%%%%%%%%%%
       if (State.(ID.id).surf > 0) then
 	 NewSurfTime = State.(ID.id).surf - 1
 	 SubState = {UpdateState State.(ID.id) [surf#NewSurfTime]}
@@ -258,7 +268,7 @@ in
       case Beginning of yes then {Send Submarine dive}
       [] no then skip
       end
-      {Delay Input.thinkMin}
+      {SimulateThinking}
       {Send Submarine move(MoveID Position Direction)}
       case Direction of surface then
 	 {Send Port surface(MoveID)}
@@ -268,19 +278,20 @@ in
       {Send Port movePlayer(MoveID Position)}
       {BroadCast Direction MoveID PlayerPort}
 
-      {Delay Input.thinkMin}
+      {SimulateThinking}
+      
 %%%%%%%%%% ITEM %%%%%%%%
 
-      	 {Send Submarine chargeItem(KindID KindItem)} %Ask for charge
-	 case KindItem of null then skip
-	 [] _ then {BroadCast KindItem#charge KindID PlayerPort} %BroadCast Charge
-	 else skip
-	 end
-	 {Delay Input.thinkMin}
+      {Send Submarine chargeItem(KindID KindItem)} %Ask for charge
+      case KindItem of null then skip
+      [] _ then {BroadCast KindItem#charge KindID PlayerPort} %BroadCast Charge
+      else skip
+      end
+      {SimulateThinking}
       %%%%%%%%%%%% Fire %%%%%%
-	 {Send Submarine fireItem(FireID KindFire)} %Ask for fire item
-	 case KindFire of null then skip
-	 [] mine(_) then
+      {Send Submarine fireItem(FireID KindFire)} %Ask for fire item
+      case KindFire of null then skip
+      [] mine(_) then
 	    {BroadCast KindFire#place FireID PlayerPort} %broadcast mine placed
 	    %Check if the sub is hit by the explosien maybe ?
 	 [] missile(_) then
@@ -293,11 +304,11 @@ in
 	    {BroadCast KindFire FireID PlayerPort}
 	    %Broadcast the sonar
 	 else skip
-	 end
-	 {Delay Input.thinkMin}
+      end
+	 {SimulateThinking}
 %%%%%%%%%%% MINE %%%%%%%%
 	 {Send Submarine fireMine(MineID Mine)}%Ask for mine explosion
-	 case Mine of nil then skip
+      case Mine of nil then skip
 	 [] _ then
 	    {BroadCast KindFire#explode MineID PlayerPort}
 	 end

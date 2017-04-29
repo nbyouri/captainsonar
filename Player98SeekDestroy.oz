@@ -39,9 +39,6 @@ define
    Directions
 
    StateModification
-   Items
-   RandomItem
-   RandomEnemy
 
    NotOnPath
 in
@@ -61,7 +58,7 @@ in
       NewState
    in
       MidState = state(
-		    id:id(id:ID color:Color name:'Dummy')
+		    id:id(id:ID color:Color name:'SeekDestroy')
 		    dead:false
 		    hp:Input.maxDamage
 		    missileCharge:0
@@ -71,8 +68,8 @@ in
 		    enemies:data(1:null)
 		    surf:true
 		    visited:nil
-		    focus:null
 		    mode:seek
+		    target:null
 		    )
       NewState = {Sub MidState Input.nbPlayer}
       NewState
@@ -153,15 +150,89 @@ in
 	    end
 	 end
       end
+
+      fun{FollowPos Call} Pos Direction in
+	 case Call of firstCall then
+	 if (State.pos.x > State.enemies.(State.target).pos.x) then
+	    Direction = south
+	 elseif (State.pos.x < State.enemies.(State.target).pos.x) then
+	    Direction = north
+	 else
+	    if (State.pos.y > State.enemies.(State.target).pos.y) then
+	       Direction = west
+	    else
+	       Direction = east
+	    end
+	 end
+	 case Direction of
+	 east then Pos = pt(x:(State.pos.x) y:(State.pos.y+1))
+	 [] north then Pos = pt(x:(State.pos.x-1) y:(State.pos.y))
+	 [] south then Pos = pt(x:(State.pos.x+1) y:(State.pos.y))
+	 [] west then Pos = pt(x:(State.pos.x) y:(State.pos.y-1))
+	 [] surface then Pos = State.pos
+	 end
+	 case Direction of surface then Pos#Direction
+	 else  
+	    if {CanMove Pos} andthen {NotOnPath Pos State.visited} then
+	    Pos#Direction
+	    else
+	    {FollowPos secondCall}
+	    end
+	 end
+	 [] secondcall then
+	    if (State.pos.y > State.enemies.(State.target).pos.y) then
+	       Direction = west
+	    elseif (State.pos.y < State.enemies.(State.target).pos.y) then
+	       Direction = east
+	    else
+	       if (State.pos.x > State.enemies.(State.target).pos.x) then
+		  Direction = south
+	       else
+		  Direction = north
+	       end
+	    end
+	    case Direction of
+	       east then Pos = pt(x:(State.pos.x) y:(State.pos.y+1))
+	    [] north then Pos = pt(x:(State.pos.x-1) y:(State.pos.y))
+	    [] south then Pos = pt(x:(State.pos.x+1) y:(State.pos.y))
+	    [] west then Pos = pt(x:(State.pos.x) y:(State.pos.y-1))
+	    [] surface then Pos = State.pos
+	    end
+	    case Direction of surface then Pos#Direction
+	    else  
+	       if {CanMove Pos} andthen {NotOnPath Pos State.visited} then
+		  Pos#Direction
+	       else
+		  {NewPos}
+	       end
+	    end
+	 else
+	    {NewPos}
+	 end
+      end
       RetVal
    in
       if State.dead then
 	 Direction = null
 	 Position = null
+	 ID = null
 	 State
       else
 	 case State.mode of seek then
 	    RetVal = {NewPos}
+	    case RetVal of RetPos#RetDir then
+	       case RetDir of surface then NewState = {UpdateState State [pos#RetPos visited#(nil)]}
+	       else
+		  NewState = {UpdateState State [pos#RetPos visited#(RetPos|State.visited)]}
+	       end
+	       ID = NewState.id
+	       Position = NewState.pos
+	       Direction = RetDir
+	       NewState
+	    else State
+	    end
+	 [] destroy then
+	    RetVal = {FollowPos firstCall}
 	    case RetVal of RetPos#RetDir then
 	       case RetDir of surface then NewState = {UpdateState State [pos#RetPos visited#(nil)]}
 	       else
@@ -184,51 +255,25 @@ in
       NewState
    end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-   Items = [mine missile sonar drone]
-
-   fun{RandomItem}
-      {Nth Items (({OS.rand} mod {Length Items}) + 1)}
-   end
-   
-   fun{ChargeItem State ID KindItem}
-      NewState
-      Item
-   in
+   fun{ChargeItem State ID KindItem} NewState in
       if State.dead then
+	 ID = null
 	 KindItem = null
 	 State
       else
-	 Item = {RandomItem}
-	 case Item of missile then
-	    NewState = {UpdateState State [missileCharge#State.missileCharge+1]}
-	    ID = NewState.id
-	    if NewState.missileCharge mod Input.missile == 0 then
-	       KindItem = missile
-	    else
-	       KindItem = null
-	    end
-	 [] sonar then
+	 case State.mode of seek then
 	    NewState = {UpdateState State [sonarCharge#State.sonarCharge+1]}
 	    ID = NewState.id
-	    if NewState.sonarCharge mod Input.sonar == 0 then
-	       KindItem = sonar
+	    if (NewState.sonarCharge mod Input.sonar == 0) then
+		  KindItem = sonar
 	    else
 	       KindItem = null
 	    end
-	 [] drone then
-	    NewState = {UpdateState State [droneCharge#State.droneCharge+1]}
+	 [] destroy then
+	    NewState = {UpdateState State [missileCharge#State.missileCharge+1]}
 	    ID = NewState.id
-	    if NewState.droneCharge mod Input.drone == 0 then
-	       KindItem = drone
-	    else
-	       KindItem = null
-	    end
-	 [] mine then
-	    NewState = {UpdateState State [mineCharge#State.mineCharge+1]}
-	    ID = NewState.id
-	    if NewState.mineCharge mod Input.mine == 0 then
-	       KindItem = mine
+	    if (NewState.missileCharge mod Input.missile == 0) then
+	       KindItem = missile
 	    else
 	       KindItem = null
 	    end
@@ -241,61 +286,54 @@ in
       end
    end
 
-   fun{RandomEnemy}
-      (({OS.rand} mod Input.nbPlayer) + 1)
-   end
-   
    fun{FireItem State ID KindFire}
       fun{DistTo Pos1 Pos2}
 	 {Number.abs Pos1.x-Pos2.x} + {Number.abs Pos1.y-Pos2.y}
       end
       NewState
-      Item
-      N
    in
       if State.dead then
 	 KindFire = null
 	 State
       else
-	 Item = {RandomItem}
-	 N = {RandomEnemy}
-	 {System.show Item}
-	 {System.show N}
-	 case Item of sonar then
+	 case State.mode of seek then
 	    if State.sonarCharge >= Input.sonar then
-	       %FIRE SONAR
 	       KindFire = sonar
 	       NewState = {UpdateState State [sonarCharge#(State.sonarCharge - Input.sonar)]}
 	    else
-	       NewState = State
 	       KindFire = null
+	       NewState = State
 	    end
-	 [] missile then
-	    if State.enemies.N.spotted andthen State.missileCharge >= Input.missile andthen
-	       {DistTo State.pos State.enemies.N.pos} =< Input.maxDistanceMissile andthen
-	       {DistTo State.pos State.enemies.N.pos} >= Input.minDistanceMissile then
+	 [] destroy then
+	    if  State.missileCharge >= Input.missile andthen
+	       {DistTo State.pos State.enemies.(State.target).pos} =< Input.maxDistanceMissile andthen
+	       {DistTo State.pos State.enemies.(State.target).pos} >= Input.minDistanceMissile then
 	       {System.show fire(State.id.id State.focus)}
-	       KindFire = missile(State.enemies.N.pos)
-	       {System.show 'charge missile'}
+	       KindFire = missile(State.enemies.(State.target).pos)
 	       NewState = {UpdateState State [missileCharge#(State.missileCharge - Input.missile)]}
 	    else
 	       KindFire = null
 	       NewState = State
 	    end
+	    ID = NewState.id
+	    NewState	    
 	 else
 	    KindFire = null
 	    NewState = State
 	 end
-	 ID = NewState.id
-	 NewState
       end
    end
 
-
    fun{FireMine State ID Mine}
-      ID = State.id
-      Mine = null
-      State
+      if State.dead then
+	 Mine = null
+	 ID = null
+	 State
+      else
+	 ID = State.id
+	 Mine = null
+	 State
+      end
    end
 
    fun{IsSurface State ID Answer}
@@ -304,8 +342,31 @@ in
       State
    end
 
-   fun{SayMove State ID Direction}
-      State
+   fun{SayMove State ID Direction} N StateN StateEn NewState in
+            N = ID.id
+      if State.enemies.N.spotted then
+	 case Direction
+	 of north then
+	    StateN = {UpdateState State.enemies.N [pos#pt(x:State.enemies.N.pos.x-1 y:State.enemies.N.pos.y)]}
+	    StateEn = {UpdateState State.enemies [N#StateN]}
+	    NewState = {UpdateState State [enemies#StateEn]}
+	 [] south then
+	    StateN = {UpdateState State.enemies.N [pos#pt(x:State.enemies.N.pos.x+1 y:State.enemies.N.pos.y)]}
+	    StateEn = {UpdateState State.enemies [N#StateN]}
+	    NewState = {UpdateState State [enemies#StateEn]}
+	 [] west then
+	    StateN = {UpdateState State.enemies.N [pos#pt(x:State.enemies.N.pos.x y:State.enemies.N.pos.y-1)]}
+	    StateEn = {UpdateState State.enemies [N#StateN]}
+	    NewState = {UpdateState State [enemies#StateEn]}
+	 [] east then
+	    StateN = {UpdateState State.enemies.N [pos#pt(x:State.enemies.N.pos.x y:State.enemies.N.pos.y+1)]}
+	    StateEn = {UpdateState State.enemies [N#StateN]}
+	    NewState = {UpdateState State [enemies#StateEn]}
+	 end
+      else
+	 NewState = State
+      end
+      NewState
    end
 
    fun{SaySurface State ID}
@@ -383,22 +444,28 @@ in
    end
 
    fun{SayPassingDrone State Drone ID Answer}
-      case Drone
-      of drone(row X) then
-	 if State.pos.x == X then
-	    Answer = true
-	 else
-	    Answer = false
+      if State.dead then
+	 Answer = null
+	 ID = null
+	 State
+      else
+	 case Drone
+	 of drone(row X) then
+	    if State.pos.x == X then
+	       Answer = true
+	    else
+	       Answer = false
+	    end
+	 [] drone(column Y) then
+	    if State.pos.y == Y then
+	       Answer = true
+	    else
+	       Answer = false
+	    end
 	 end
-      [] drone(column Y) then
-	 if State.pos.y == Y then
-	    Answer = true
-	 else
-	    Answer = false
-	 end
+	 ID = State.id
+	 State
       end
-      ID = State.id
-      State
    end
 
    fun{SayAnswerDrone State Drone ID Answer}
@@ -406,24 +473,44 @@ in
    end
 
    fun{SayPassingSonar State ID Answer}
-      ID = State.id
-      Answer = State.pos
-      State
-   end
-
-   fun{SayAnswerSonar State ID Answer} StateN StateEn NewState in
-      if (ID \= State.id andthen ID \= null) then
-	 StateN = {UpdateState State.enemies.(ID.id) [pos#Answer spotted#true]}
-	 StateEn = {UpdateState State.enemies [ID.id#StateN]}
-	 NewState = {UpdateState State [focus#ID.id enemies#StateEn]}
-	 NewState
+      if State.dead then
+	 Answer = null
+	 ID = null
+	 State
       else
+	 ID = State.id
+	 Answer = pos(x:State.pos.x y:1)
 	 State
       end
    end
 
+   fun{SayAnswerSonar State ID Answer} NewState StateN StateEn in
+      if (ID \= State.id andthen ID \= null) then
+	 case State.mode of seek then
+	    StateN = {UpdateState State.enemies.(ID.id) [pos#Answer spotted#true]}
+	    StateEn = {UpdateState State.enemies [ID.id#StateN]}
+	    NewState = {UpdateState State [focus#ID.id enemies#StateEn mode#destroy target#ID.id]}
+	    NewState
+	 [] destroy then
+	    NewState = State
+	 else NewState = State
+	 end	 
+      else
+	 State
+      end
+
+   end
+
    fun{SayDeath State ID}
-      State
+      case ID of null then
+	 State
+      [] Rec then
+	 if State.target == Rec.id then
+	    {UpdateState State [target#null mode#seek]}
+	 else
+	    State
+	 end
+      end
    end
 
    fun{SayDamageTaken State ID Damage LifeLeft}
@@ -446,7 +533,6 @@ in
    end
    
    proc{TreatStream Stream State}
-      
       case Stream
       of nil then skip
       []initPosition(ID Position)|S then NewState in
@@ -509,5 +595,5 @@ in
       else
 	 skip
       end
-   end
+   end 
 end
